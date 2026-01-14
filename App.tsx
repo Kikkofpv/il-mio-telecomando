@@ -54,7 +54,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Intervallo impostato a 1.5 secondi (1500ms)
+    // Intervallo di alternanza impostato a 1.5 secondi (1500ms)
     const timer = setInterval(() => setAlternatingFrame(v => !v), 1500);
     return () => clearInterval(timer);
   }, []);
@@ -76,6 +76,7 @@ export default function App() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
+      // Qui va la chiamata fetch reale verso l'indirizzo IP dell'ESP32
       await new Promise(resolve => setTimeout(resolve, 800));
       showToast(`Dati inviati a ${hardwareConfig.ipAddress}`, 'success');
     } catch (e) {
@@ -113,7 +114,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-full w-full bg-[#020617] text-slate-100 overflow-hidden font-sans">
       {toast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top duration-300">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top duration-300">
           <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border ${
             toast.type === 'success' ? 'bg-green-600 border-green-400' : 
             toast.type === 'error' ? 'bg-red-600 border-red-400' : 'bg-blue-600 border-blue-400'
@@ -124,20 +125,20 @@ export default function App() {
         </div>
       )}
 
-      <header className="px-4 py-4 bg-[#0f172a] border-b border-white/5 flex justify-between items-center shrink-0 safe-top">
+      <header className="px-4 pt-4 pb-4 bg-[#0f172a] border-b border-white/5 flex justify-between items-center shrink-0 safe-top">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Grid3X3 size={20} className="text-white" />
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <Grid3X3 size={22} className="text-white" />
           </div>
           <div>
             <h1 className="text-sm font-black uppercase tracking-tighter leading-none italic">Matrix<span className="text-blue-500">Radar</span></h1>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Control System</p>
+            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Mobile Controller</p>
           </div>
         </div>
         <button 
           onClick={handleSync} 
           disabled={isSyncing}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase active:scale-95 transition-all border ${isSyncing ? 'bg-blue-600/20 border-blue-500 text-blue-500' : 'bg-green-600/10 border-green-500/20 text-green-500'}`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase active:scale-95 transition-all border ${isSyncing ? 'bg-blue-600/20 border-blue-500 text-blue-500' : 'bg-green-600/10 border-green-500/20 text-green-500'}`}
         >
           {isSyncing ? <Wifi className="animate-pulse" size={14} /> : <WifiOff size={14} />}
           {isSyncing ? 'Syncing...' : 'Push Data'}
@@ -150,11 +151,11 @@ export default function App() {
             <div className="p-3 bg-[#0f172a]/50 border-b border-white/5 space-y-3 shrink-0">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Sparkles className={`absolute left-3 top-2.5 ${isAiLoading ? 'text-purple-400 animate-ai-pulse' : 'text-slate-500'}`} size={16} />
+                  <Sparkles className={`absolute left-3 top-3 ${isAiLoading ? 'text-purple-400 animate-ai-pulse' : 'text-slate-500'}`} size={16} />
                   <input 
                     type="text" 
-                    placeholder="Chiedi all'AI: 'Disegna una X rossa'..." 
-                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white outline-none focus:border-purple-500 transition-colors"
+                    placeholder="Chiedi all'AI: 'Tutto verde con 88'..." 
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-white outline-none focus:border-purple-500 transition-colors"
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAiAction()}
@@ -170,16 +171,16 @@ export default function App() {
                     <button 
                       key={c} 
                       onClick={() => setSelectedColor(c)}
-                      className={`w-8 h-8 rounded-full border-2 transition-all shrink-0 ${selectedColor === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-40'}`}
+                      className={`w-9 h-9 rounded-full border-2 transition-all shrink-0 ${selectedColor === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-40'}`}
                       style={{ backgroundColor: c }}
                     />
                   ))}
                 </div>
                 <button 
                   onClick={() => { if(window.confirm("Cancellare tutto?")) { setDisplays(createInitialDisplays()); showToast("Matrice azzerata", "info"); } }} 
-                  className="p-2.5 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 active:scale-90"
+                  className="p-3 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 active:scale-90"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={20} />
                 </button>
               </div>
             </div>
@@ -207,22 +208,34 @@ export default function App() {
         {activeTab === TabView.SETTINGS && (
           <div className="p-6 space-y-6 overflow-y-auto h-full">
             <h2 className="text-xl font-black uppercase tracking-tighter text-blue-500 italic">Network Config</h2>
-            <div className="bg-slate-900/50 p-5 rounded-3xl border border-white/5 space-y-4">
+            <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 space-y-4">
               <div>
                 <label className="text-[10px] font-black text-slate-500 uppercase block mb-2 tracking-widest">Indirizzo IP dell'ESP32</label>
                 <input 
                   type="text" 
                   value={hardwareConfig.ipAddress} 
                   onChange={e => setHardwareConfig({...hardwareConfig, ipAddress: e.target.value})}
-                  className="w-full bg-black border border-white/10 rounded-2xl p-4 text-white font-mono text-center outline-none focus:border-blue-500 shadow-inner"
+                  className="w-full bg-black border border-white/10 rounded-2xl p-4 text-white font-mono text-center text-lg outline-none focus:border-blue-500 shadow-inner"
                   placeholder="es. 192.168.4.1"
                 />
               </div>
               <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                 <p className="text-[10px] text-blue-200/60 leading-relaxed">
-                  L'app invierà i dati della matrice a questo indirizzo ogni volta che premi "Push Data". Assicurati che il telefono e l'ESP32 siano sulla stessa rete WiFi.
+                 <p className="text-[10px] text-blue-200/60 leading-relaxed font-medium">
+                  Assicurati che lo smartphone sia connesso alla stessa rete WiFi creata dall'ESP32 (o alla rete locale dove l'ESP32 è registrato).
                 </p>
               </div>
+            </div>
+
+            <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
+              <h3 className="text-xs font-black uppercase text-slate-400 mb-4">PWA Status</h3>
+              <div className="flex items-center gap-3 text-[10px] font-bold text-green-500">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                PRONTA PER INSTALLAZIONE
+              </div>
+              <p className="text-[9px] text-slate-500 mt-2">
+                Su iOS: premi Condividi > Aggiungi a schermata Home.<br/>
+                Su Android: premi i tre puntini > Installa App.
+              </p>
             </div>
           </div>
         )}
