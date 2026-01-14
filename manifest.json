@@ -1,17 +1,18 @@
-
 {
   "name": "Matrix Radar Controller",
   "short_name": "Matrix200",
-  "description": "Controllo per 200 display numerici via ESP32",
+  "description": "Telecomando professionale per Matrice 200 Display",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#020617",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3593/3593957.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
