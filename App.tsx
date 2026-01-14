@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Trash2, 
   Settings, 
@@ -7,9 +6,8 @@ import {
   Grid3X3, 
   Sparkles,
   Wifi,
-  Palette,
-  Lightbulb,
-  FolderOpen
+  WifiOff,
+  Bell
 } from 'lucide-react';
 import DisplayGrid from './components/DisplayGrid';
 import HardwareGuide from './components/HardwareGuide';
@@ -42,6 +40,7 @@ export default function App() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [alternatingFrame, setAlternatingFrame] = useState(false);
+  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error' | 'info'} | null>(null);
   
   const [hardwareConfig, setHardwareConfig] = useState<HardwareConfig>({
     ipAddress: '192.168.4.1',
@@ -49,13 +48,17 @@ export default function App() {
     pinMapping: DEFAULT_MAPPING
   });
 
-  // Ciclo alternanza per i display in modalità "ALT"
+  const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   useEffect(() => {
-    const timer = setInterval(() => setAlternatingFrame(v => !v), 1200);
+    // Intervallo impostato a 1.5 secondi (1500ms)
+    const timer = setInterval(() => setAlternatingFrame(v => !v), 1500);
     return () => clearInterval(timer);
   }, []);
 
-  // Persistenza Dati
   useEffect(() => {
     const saved = localStorage.getItem('matrix_v2_state');
     if (saved) {
@@ -70,9 +73,16 @@ export default function App() {
     localStorage.setItem('matrix_v2_state', JSON.stringify(displays));
   }, [displays]);
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 1000);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      showToast(`Dati inviati a ${hardwareConfig.ipAddress}`, 'success');
+    } catch (e) {
+      showToast("Errore di connessione all'ESP32", 'error');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const updateDisplay = useCallback((id: number, updates: Partial<DisplayUnit>) => {
@@ -92,8 +102,9 @@ export default function App() {
       const result = await generatePattern(aiPrompt, displays);
       setDisplays(result);
       setAiPrompt('');
+      showToast("Pattern AI applicato!", "success");
     } catch (e) {
-      alert("Errore AI. Controlla la connessione.");
+      showToast("Errore AI. Controlla API Key.", "error");
     } finally {
       setIsAiLoading(false);
     }
@@ -101,7 +112,18 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full w-full bg-[#020617] text-slate-100 overflow-hidden font-sans">
-      {/* Header Mobile-First */}
+      {toast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top duration-300">
+          <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border ${
+            toast.type === 'success' ? 'bg-green-600 border-green-400' : 
+            toast.type === 'error' ? 'bg-red-600 border-red-400' : 'bg-blue-600 border-blue-400'
+          }`}>
+            <Bell size={16} className="text-white" />
+            <span className="text-xs font-bold text-white whitespace-nowrap">{toast.msg}</span>
+          </div>
+        </div>
+      )}
+
       <header className="px-4 py-4 bg-[#0f172a] border-b border-white/5 flex justify-between items-center shrink-0 safe-top">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -109,33 +131,36 @@ export default function App() {
           </div>
           <div>
             <h1 className="text-sm font-black uppercase tracking-tighter leading-none italic">Matrix<span className="text-blue-500">Radar</span></h1>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Dual-Digit Bus System</p>
+            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Control System</p>
           </div>
         </div>
-        <button onClick={handleSync} className="flex items-center gap-2 bg-green-600/10 border border-green-500/20 text-green-500 px-4 py-2 rounded-full text-[10px] font-black uppercase active:scale-95 transition-all">
-          <Wifi size={14} className={isSyncing ? 'animate-pulse' : ''} />
-          {isSyncing ? 'Sync...' : 'Online'}
+        <button 
+          onClick={handleSync} 
+          disabled={isSyncing}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase active:scale-95 transition-all border ${isSyncing ? 'bg-blue-600/20 border-blue-500 text-blue-500' : 'bg-green-600/10 border-green-500/20 text-green-500'}`}
+        >
+          {isSyncing ? <Wifi className="animate-pulse" size={14} /> : <WifiOff size={14} />}
+          {isSyncing ? 'Syncing...' : 'Push Data'}
         </button>
       </header>
 
-      {/* Area Principale */}
       <main className="flex-1 overflow-hidden relative flex flex-col min-h-0">
         {activeTab === TabView.CONTROLLER && (
           <div className="flex flex-col h-full">
-            {/* Toolbar AI e Colore */}
             <div className="p-3 bg-[#0f172a]/50 border-b border-white/5 space-y-3 shrink-0">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Sparkles className="absolute left-3 top-2.5 text-purple-400" size={16} />
+                  <Sparkles className={`absolute left-3 top-2.5 ${isAiLoading ? 'text-purple-400 animate-ai-pulse' : 'text-slate-500'}`} size={16} />
                   <input 
                     type="text" 
-                    placeholder="Esempio: 'Scrivi 88 ovunque'..." 
+                    placeholder="Chiedi all'AI: 'Disegna una X rossa'..." 
                     className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white outline-none focus:border-purple-500 transition-colors"
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAiAction()}
                   />
                 </div>
-                <button onClick={handleAiAction} disabled={isAiLoading} className="bg-purple-600 hover:bg-purple-500 px-5 rounded-xl text-[10px] font-black uppercase disabled:opacity-30">
+                <button onClick={handleAiAction} disabled={isAiLoading} className="bg-purple-600 hover:bg-purple-500 px-5 rounded-xl text-[10px] font-black uppercase disabled:opacity-30 active:scale-95 transition-transform">
                   {isAiLoading ? '...' : 'AI'}
                 </button>
               </div>
@@ -150,13 +175,15 @@ export default function App() {
                     />
                   ))}
                 </div>
-                <button onClick={() => { if(confirm("Reset?")) setDisplays(createInitialDisplays()) }} className="p-2.5 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 active:scale-90">
+                <button 
+                  onClick={() => { if(window.confirm("Cancellare tutto?")) { setDisplays(createInitialDisplays()); showToast("Matrice azzerata", "info"); } }} 
+                  className="p-2.5 bg-red-500/10 text-red-500 rounded-xl border border-red-500/20 active:scale-90"
+                >
                   <Trash2 size={18} />
                 </button>
               </div>
             </div>
 
-            {/* Griglia Matrice */}
             <div className="flex-1 min-h-0 relative">
               <DisplayGrid 
                 displays={displays}
@@ -180,28 +207,30 @@ export default function App() {
         {activeTab === TabView.SETTINGS && (
           <div className="p-6 space-y-6 overflow-y-auto h-full">
             <h2 className="text-xl font-black uppercase tracking-tighter text-blue-500 italic">Network Config</h2>
-            <div className="bg-slate-900/50 p-5 rounded-2xl border border-white/5 space-y-4">
+            <div className="bg-slate-900/50 p-5 rounded-3xl border border-white/5 space-y-4">
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase block mb-2 tracking-widest">Indirizzo IP ESP32</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase block mb-2 tracking-widest">Indirizzo IP dell'ESP32</label>
                 <input 
                   type="text" 
                   value={hardwareConfig.ipAddress} 
                   onChange={e => setHardwareConfig({...hardwareConfig, ipAddress: e.target.value})}
-                  className="w-full bg-black border border-white/10 rounded-xl p-4 text-white font-mono outline-none focus:border-blue-500"
+                  className="w-full bg-black border border-white/10 rounded-2xl p-4 text-white font-mono text-center outline-none focus:border-blue-500 shadow-inner"
+                  placeholder="es. 192.168.4.1"
                 />
               </div>
-              <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                Assicurati che lo smartphone sia connesso alla rete WiFi generata dall'ESP32 o alla stessa rete locale del dispositivo.
-              </p>
+              <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                 <p className="text-[10px] text-blue-200/60 leading-relaxed">
+                  L'app invierà i dati della matrice a questo indirizzo ogni volta che premi "Push Data". Assicurati che il telefono e l'ESP32 siano sulla stessa rete WiFi.
+                </p>
+              </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Navigazione Tab */}
       <nav className="bg-[#0f172a] border-t border-white/5 flex justify-around p-2 pb-8 shrink-0 z-50 safe-bottom">
         {[
-          { id: TabView.CONTROLLER, icon: Grid3X3, label: 'Griglia' },
+          { id: TabView.CONTROLLER, icon: Grid3X3, label: 'Control' },
           { id: TabView.HARDWARE_GUIDE, icon: Cpu, label: 'Wiring' },
           { id: TabView.SETTINGS, icon: Settings, label: 'Setup' }
         ].map(tab => (

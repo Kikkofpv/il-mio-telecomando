@@ -1,3 +1,4 @@
+
 import React, { memo, useState, useRef } from 'react';
 import { DisplayUnit, PinMapping } from '../types';
 // Fixed: Added Palette to the lucide-react imports
