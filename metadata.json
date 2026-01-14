@@ -1,0 +1,18 @@
+{
+  "name": "Matrix Radar Controller",
+  "short_name": "Matrix200",
+  "description": "Telecomando per Matrice 200 Display",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3593/3593957.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "requestFramePermissions": []
+}
